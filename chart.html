@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>炒金宝 - 伦敦金伦敦银走势详情</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://s3.tradingview.com/tv.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -19,115 +18,121 @@
 
         .back-btn { display: inline-flex; align-items: center; color: #ffd700; font-size: 14px; padding: 8px 16px; background: rgba(255, 215, 0, 0.1); border-radius: 20px; margin-bottom: 16px; cursor: pointer; }
 
-        .tab-switch { display: flex; background: #252542; border-radius: 12px; padding: 4px; margin-bottom: 16px; }
-        .tab-item { flex: 1; text-align: center; padding: 12px; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
-        .tab-item.active { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #1a1a2e; }
-        .tab-item:not(.active) { color: #888; }
+        .symbol-info { background: #252542; border-radius: 12px; padding: 20px; margin-bottom: 16px; text-align: center; }
+        .symbol-name { font-size: 16px; color: #aaa; margin-bottom: 8px; }
+        .symbol-price { font-size: 36px; font-weight: 700; color: #fff; }
+        .symbol-change { font-size: 16px; font-weight: 600; margin-top: 8px; }
+        .symbol-change.up { color: #4ade80; }
+        .symbol-change.down { color: #f87171; }
 
-        .tv-widget { background: #252542; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
-        .tv-header { padding: 12px 16px; font-size: 14px; font-weight: 600; color: #fff; border-bottom: 1px solid #333; }
-        #tv-widget-container { height: 450px; }
+        .chart-container { background: #252542; border-radius: 12px; padding: 10px; margin-bottom: 16px; }
+        #tradingview_widget { height: 400px; }
 
-        .info-section { background: #252542; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-        .info-title { font-size: 14px; font-weight: 600; color: #ffd700; margin-bottom: 12px; }
-        .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .info-item { text-align: center; }
-        .info-label { font-size: 11px; color: #888; margin-bottom: 4px; }
-        .info-value { font-size: 18px; font-weight: 600; color: #fff; }
-        .info-value.up { color: #4ade80; }
-        .info-value.down { color: #f87171; }
+        .time-range { display: flex; gap: 8px; margin-bottom: 12px; justify-content: center; flex-wrap: wrap; }
+        .range-btn { padding: 8px 16px; border-radius: 20px; font-size: 13px; background: #2d2d4a; color: #888; border: none; cursor: pointer; }
+        .range-btn.active { background: #ffd700; color: #1a1a2e; font-weight: 600; }
 
-        .api-note { font-size: 11px; color: #666; text-align: center; margin-top: 12px; }
+        .api-note { font-size: 12px; color: #666; text-align: center; margin-top: 12px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="back-btn" onclick="location.href='index.html'">← 返回行情</div>
 
-        <div class="tab-switch">
-            <div class="tab-item active" id="tabGold" onclick="switchSymbol('FX:XAUUSD')">伦敦金</div>
-            <div class="tab-item" id="tabSilver" onclick="switchSymbol('FX:XAGUSD')">伦敦银</div>
+        <div class="symbol-info" id="symbolInfo">
+            <div class="symbol-name" id="symbolName">伦敦金 XAU/USD</div>
+            <div class="symbol-price" id="symbolPrice">--</div>
+            <div class="symbol-change" id="symbolChange">--</div>
         </div>
 
-        <div class="tv-widget">
-            <div class="tv-header" id="chartTitle">伦敦金走势</div>
-            <div id="tv-widget-container"></div>
+        <div class="time-range">
+            <button class="range-btn" onclick="setInterval('15')">15分</button>
+            <button class="range-btn" onclick="setInterval('60')">1小时</button>
+            <button class="range-btn active" onclick="setInterval('D')">日线</button>
+            <button class="range-btn" onclick="setInterval('W')">周线</button>
         </div>
 
-        <div class="info-section">
-            <div class="info-title">📊 关键信息</div>
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">当前价格</div>
-                    <div class="info-value" id="currentPrice">--</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">今日涨跌</div>
-                    <div class="info-value" id="priceChange">--</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">今日最高</div>
-                    <div class="info-value" id="highPrice">--</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">今日最低</div>
-                    <div class="info-value" id="lowPrice">--</div>
-                </div>
-            </div>
+        <div class="chart-container">
+            <div id="tradingview_widget"></div>
         </div>
         
-        <div class="api-note">📈 数据来源: TradingView | 实时更新</div>
+        <div class="api-note">📈 数据来源: TradingView | 点击价格返回主页</div>
     </div>
 
     <script>
-        let currentSymbol = 'FX:XAUUSD';
-        let widget = null;
+        // 获取URL参数
+        const urlParams = new URLSearchParams(window.location.search);
+        let symbol = urlParams.get('symbol') || 'XAUUSD';
+        let interval = 'D';
+        
+        const symbolMap = {
+            'XAUUSD': { name: '伦敦金 XAU/USD', tv: 'FX:XAUUSD' },
+            'XAGUSD': { name: '伦敦银 XAG/USD', tv: 'FX:XAGUSD' }
+        };
 
-        function switchSymbol(symbol) {
-            currentSymbol = symbol;
-            document.getElementById('tabGold').classList.toggle('active', symbol === 'FX:XAUUSD');
-            document.getElementById('tabSilver').classList.toggle('active', symbol === 'FX:XAGUSD');
-            document.getElementById('chartTitle').textContent = symbol === 'FX:XAUUSD' ? '伦敦金走势' : '伦敦银走势';
-            initChart();
+        function init() {
+            const info = symbolMap[symbol] || symbolMap['XAUUSD'];
+            document.getElementById('symbolName').textContent = info.name;
+            loadChart();
+            loadPrice();
         }
 
-        function initChart() {
-            const container = document.getElementById('tv-widget-container');
+        function loadPrice() {
+            fetch('https://hq.sin.cn/ws/hq/v1.php/sym/marketdata/' + symbol)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.data && data.data.list && data.data.list[0]) {
+                        const p = data.data.list[0];
+                        document.getElementById('symbolPrice').textContent = parseFloat(p.last).toFixed(2);
+                        const change = parseFloat(p.chg || 0);
+                        const changePct = parseFloat(p.chg_pct || 0);
+                        document.getElementById('symbolChange').textContent = (change >= 0 ? '↑ ' : '↓ ') + Math.abs(change).toFixed(2) + ' (' + (changePct >= 0 ? '+' : '') + changePct.toFixed(2) + '%)';
+                        document.getElementById('symbolChange').className = 'symbol-change ' + (change >= 0 ? 'up' : 'down');
+                    }
+                })
+                .catch(e => console.log('价格加载失败', e));
+        }
+
+        function setInterval(t) {
+            interval = t;
+            document.querySelectorAll('.range-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.includes(t === '15' ? '15分' : t === '60' ? '1小时' : t === 'D' ? '日线' : '周线'));
+            });
+            loadChart();
+        }
+
+        function loadChart() {
+            const info = symbolMap[symbol] || symbolMap['XAUUSD'];
+            const container = document.getElementById('tradingview_widget');
             container.innerHTML = '';
             
-            widget = new TradingView.widget({
-                "width": "100%",
-                "height": 420,
-                "symbol": currentSymbol,
-                "interval": "D",
-                "timezone": "Asia/Shanghai",
-                "theme": "dark",
-                "style": "1",
-                "locale": "zh_CN",
-                "toolbar_bg": "#1a1a2e",
-                "enable_publishing": false,
-                "allow_symbol_change": false,
-                "container_id": "tv-widget-container",
-                "hide_top_toolbar": false,
-                "hide_legend": false,
-                "save_image": false,
-                "studies": ["RSI@tv-basicstudies", "MACD@tv-basicstudies"],
-                "show_popup_button": true,
-                "popup_width": "1000",
-                "popup_height": "650"
-            });
+            // 使用简单的方式加载TradingView图表
+            const script = document.createElement('script');
+            script.src = 'https://s3.tradingview.com/tv.js';
+            script.onload = function() {
+                new TradingView.widget({
+                    "width": "100%",
+                    "height": 380,
+                    "symbol": info.tv,
+                    "interval": interval,
+                    "timezone": "Asia/Shanghai",
+                    "theme": "dark",
+                    "style": "1",
+                    "locale": "zh_CN",
+                    "toolbar_bg": "#252542",
+                    "enable_publishing": false,
+                    "allow_symbol_change": false,
+                    "container_id": "tradingview_widget",
+                    "hide_top_toolbar": false,
+                    "hide_legend": false,
+                    "save_image": false,
+                    "studies": []
+                });
+            };
+            document.head.appendChild(script);
         }
 
-        // 切换时自动刷新
-        function switchSymbol(symbol) {
-            currentSymbol = symbol;
-            document.getElementById('tabGold').classList.toggle('active', symbol === 'FX:XAUUSD');
-            document.getElementById('tabSilver').classList.toggle('active', symbol === 'FX:XAGUSD');
-            document.getElementById('chartTitle').textContent = symbol === 'FX:XAUUSD' ? '伦敦金走势' : '伦敦银走势';
-            initChart();
-        }
-
-        initChart();
+        init();
     </script>
 </body>
 </html>
