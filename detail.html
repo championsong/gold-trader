@@ -59,12 +59,22 @@ body{font-family:'Noto Sans SC',sans-serif;background:#1a1a2e;color:#fff;min-hei
 
 <script>
 function getParam(name) {
-    var params = location.search.substring(1).split('&');
-    for (var i = 0; i < params.length; i++) {
-        var pair = params[i].split('=');
-        if (pair[0] === name) return decodeURIComponent(pair[1] || '');
+    try {
+        var params = new URLSearchParams(location.search);
+        return params.get(name) || '';
+    } catch(e) {
+        var result = '';
+        var params = location.search.substring(1).split('&');
+        for (var i = 0; i < params.length; i++) {
+            var pair = params[i].split('=');
+            if (pair[0] === name) {
+                result = pair.slice(1).join('=');
+                try { result = decodeURIComponent(result); } catch(e2) {}
+                break;
+            }
+        }
+        return result;
     }
-    return '';
 }
 
 var titleEn = getParam('title_en');
