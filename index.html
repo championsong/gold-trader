@@ -102,43 +102,99 @@ async function loadPrices() {
         var r2 = await fetch('https://www.goldapi.io/api/XAG/USD',{headers:{'x-access-token':GOLD_KEY}});
         var g = await r1.json();
         var s = await r2.json();
+        
+        // 黄金
         if (g.price) {
-            var chg = g.chg || 0;
-            var pct = g.chg_pct || 0;
-            document.getElementById('goldPrice').textContent = g.price.toFixed(2);
-            document.getElementById('goldChange').textContent = (chg>=0?'↑ ':'↓ ')+Math.abs(chg).toFixed(2)+' ('+(pct>=0?'+':'')+pct.toFixed(2)+'%)';
-            document.getElementById('goldChange').className = 'card-change '+(chg>=0?'up':'down');
+            var price = g.price;
+            // 尝试多个可能的字段名
+            var chg = g.ch || g.chg || g.change || g.price_change || (g.open ? price - g.open : 0);
+            var pct = g.ch_pct || g.chg_pct || g.change_pct || g.price_change_pct || (g.open && g.open > 0 ? ((price - g.open) / g.open * 100) : 0);
+            
+            document.getElementById('goldPrice').textContent = price.toFixed(2);
+            
+            if (chg !== undefined && chg !== null && !isNaN(chg)) {
+                var arrow = chg >= 0 ? '↑ ' : '↓ ';
+                var sign = chg >= 0 ? '+' : '';
+                var pctSign = pct >= 0 ? '+' : '';
+                document.getElementById('goldChange').textContent = arrow + Math.abs(chg).toFixed(2) + ' (' + pctSign + pct.toFixed(2) + '%)';
+                document.getElementById('goldChange').style.display = '';
+            } else {
+                document.getElementById('goldChange').textContent = '今日数据';
+            }
+            document.getElementById('goldChange').className = 'card-change ' + (chg >= 0 ? 'up' : 'down');
+        } else {
+            document.getElementById('goldPrice').textContent = '暂无数据';
+            document.getElementById('goldChange').textContent = '--';
         }
+        
+        // 白银
         if (s.price) {
-            var chg2 = s.chg || 0;
-            var pct2 = s.chg_pct || 0;
-            document.getElementById('silverPrice').textContent = s.price.toFixed(2);
-            document.getElementById('silverChange').textContent = (chg2>=0?'↑ ':'↓ ')+Math.abs(chg2).toFixed(2)+' ('+(pct2>=0?'+':'')+pct2.toFixed(2)+'%)';
-            document.getElementById('silverChange').className = 'card-change '+(chg2>=0?'up':'down');
+            var price2 = s.price;
+            var chg2 = s.ch || s.chg || s.change || s.price_change || (s.open ? price2 - s.open : 0);
+            var pct2 = s.ch_pct || s.chg_pct || s.change_pct || s.price_change_pct || (s.open && s.open > 0 ? ((price2 - s.open) / s.open * 100) : 0);
+            
+            document.getElementById('silverPrice').textContent = price2.toFixed(2);
+            
+            if (chg2 !== undefined && chg2 !== null && !isNaN(chg2)) {
+                var arrow2 = chg2 >= 0 ? '↑ ' : '↓ ';
+                var sign2 = chg2 >= 0 ? '+' : '';
+                var pctSign2 = pct2 >= 0 ? '+' : '';
+                document.getElementById('silverChange').textContent = arrow2 + Math.abs(chg2).toFixed(2) + ' (' + pctSign2 + pct2.toFixed(2) + '%)';
+                document.getElementById('silverChange').style.display = '';
+            } else {
+                document.getElementById('silverChange').textContent = '今日数据';
+            }
+            document.getElementById('silverChange').className = 'card-change ' + (chg2 >= 0 ? 'up' : 'down');
+        } else {
+            document.getElementById('silverPrice').textContent = '暂无数据';
+            document.getElementById('silverChange').textContent = '--';
         }
+        
         document.getElementById('apiStatus').textContent = 'GoldAPI.io √';
     } catch(e) {
         document.getElementById('apiStatus').textContent = 'API异常';
+        console.error(e);
     }
     document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('zh-CN');
 }
 
 function translate(text) {
     var map = {
-        'Trump':'特朗普','tariff':'关税','tariffs':'关税','impose':'征收',
-        'trade war':'贸易战','White House':'白宫','President':'总统',
-        'Federal Reserve':'美联储','Fed':'美联储','interest rate':'利率',
-        'rate hike':'加息','rate cut':'降息','policy':'政策',
-        'statement':'声明','announcement':'公告','Russia':'俄罗斯',
-        'Ukraine':'乌克兰','war':'战争','Middle East':'中东',
-        'Israel':'以色列','Iran':'伊朗','tension':'紧张局势',
-        'crisis':'危机','conflict':'冲突','peace':'和平',
-        'agreement':'协议','deal':'协议','ceasefire':'停火',
-        'Gold':'黄金','gold':'黄金','price':'价格','rises':'上涨',
-        'falls':'下跌','drops':'下跌','surges':'飙升',
-        'high':'高位','low':'低位','record':'创纪录',
-        'dollar':'美元','USD':'美元','inflation':'通胀',
-        'economy':'经济','growth':'增长','announce':'宣布'
+        'President Trump':'特朗普总统','Donald Trump':'特朗普',
+        'Trump':'特朗普','tariff':'关税','tariffs':'关税','imposed':'征收','impose':'征收',
+        'trade war':'贸易战','White House':'白宫','President':'总统','announcement':'公告',
+        'Federal Reserve':'美联储','Federal Open Market Committee':'美联储公开市场委员会',
+        'Fed':'美联储','interest rate':'利率','interest rates':'利率',
+        'rate hike':'加息','rate hikes':'加息','rate cut':'降息','rate cuts':'降息',
+        'policy':'政策','monetary policy':'货币政策',
+        'statement':'声明','press conference':'新闻发布会',
+        'Russia':'俄罗斯','Russian':'俄罗斯','Ukraine':'乌克兰','Ukrainian':'乌克兰',
+        'war':'战争','conflict':'冲突','Middle East':'中东',
+        'Israel':'以色列','Israeli':'以色列','Iran':'伊朗','Iranian':'伊朗',
+        'tension':'紧张局势','tensions':'紧张局势','crisis':'危机',
+        'peace':'和平','ceasefire':'停火','truce':'停战',
+        'agreement':'协议','deal':'协议','negotiation':'谈判',
+        'Gold':'黄金','gold':'黄金','silver':'白银',
+        'price':'价格','prices':'价格','rises':'上涨','rising':'上涨','rise':'上涨',
+        'falls':'下跌','falling':'下跌','fall':'下跌','drops':'下跌','dropping':'下跌','drop':'下跌',
+        'surges':'飙升','surging':'飙升','surge':'飙升',
+        'high':'高位','highs':'高位','low':'低位','lows':'低位',
+        'record':'创纪录','record high':'历史新高','all-time high':'历史新高',
+        'dollar':'美元','US dollar':'美元','USD':'美元','DXY':'美元指数',
+        'inflation':'通胀','inflationary':'通胀','core inflation':'核心通胀',
+        'economy':'经济','economic':'经济','economic growth':'经济增长',
+        'GDP':'GDP','growth':'增长','announce':'宣布','announced':'宣布',
+        'sanction':'制裁','sanctions':'制裁','ban':'禁令',
+        'military':'军事','troops':'军队','forces':'部队',
+        'attack':'攻击','strikes':'打击','bombing':'轰炸',
+        'meeting':'会议','summit':'峰会','talks':'会谈',
+        'market':'市场','markets':'市场','stock':'股市','stocks':'股市',
+        'safe haven':'避险','safe-haven':'避险','haven':'避风港',
+        'investment':'投资','investors':'投资者','funds':'资金',
+        'uncertainty':'不确定性','uncertain':'不确定',
+        'volatility':'波动性','risk':'风险','risks':'风险',
+        'recession':'衰退','downturn':'下行','slowdown':'放缓',
+        'retaliatory':'报复性','additional':'额外','new':'新的','fresh':'新的'
     };
     var keys = Object.keys(map).sort(function(a,b){return b.length-a.length});
     for (var i=0;i<keys.length;i++) {
@@ -211,7 +267,7 @@ function renderNews() {
         var html = '<div class="news-item" onclick="goDetail(\''+encodeURIComponent(n.title)+'\',\''+encodeURIComponent(n.title_zh)+'\',\''+n.sentiment+'\',\''+n.impact+'\',\''+n.time+'\',\''+encodeURIComponent(n.link)+'\')">';
         html += '<div class="news-content"><div class="news-titles">';
         html += '<div class="news-title-zh '+n.sentiment+'">'+n.title_zh+'</div>';
-        html += '<div class="news-title-en">'+n.title+'</div>';
+        html += '<div class="news-title-en">原文：'+n.title+'</div>';
         html += '<div class="news-meta">'+n.time+' · '+(curTab=='trump'?'川普动态':curTab=='fed'?'美联储':'地缘局势')+'</div>';
         html += '</div><div class="news-sentiment '+n.sentiment+'">'+getDir(n.sentiment)+'('+getSentiment(n.impact)+')</div></div></div>';
         c.innerHTML += html;
