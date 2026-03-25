@@ -32,29 +32,26 @@
         .section-tag { font-size: 11px; color: #666; background: #2d2d4a; padding: 4px 10px; border-radius: 10px; }
         
         .news-list { display: flex; flex-direction: column; gap: 10px; }
-        .news-item { background: #252542; border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s; }
-        .news-item:active { background: #2d2d4a; transform: scale(0.98); }
-        .news-content { flex: 1; margin-right: 12px; }
-        .news-title-zh { font-size: 14px; color: #fff; line-height: 1.4; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .news-title-en { font-size: 12px; color: #888; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-        .news-meta { display: flex; gap: 10px; font-size: 11px; color: #666; margin-top: 6px; }
-        .news-sentiment { font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
+        .news-item { background: #252542; border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.2s; }
+        .news-item:active { background: #2d2d4a; transform: scale(0.99); }
+        .news-content { display: flex; justify-content: space-between; align-items: flex-start; }
+        .news-titles { flex: 1; margin-right: 12px; }
+        .news-title-zh { font-size: 16px; font-weight: 600; line-height: 1.5; margin-bottom: 6px; }
+        .news-title-en { font-size: 12px; color: #888; line-height: 1.4; }
+        .news-meta { font-size: 11px; color: #666; margin-top: 6px; }
         
-        .news-sentiment.bullish.high { background: rgba(248, 113, 113, 0.2); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.4); }
-        .news-sentiment.bullish.medium { background: rgba(248, 113, 113, 0.15); color: #fca5a5; }
-        .news-sentiment.bullish.low { background: rgba(248, 113, 113, 0.1); color: #fecaca; }
-        .news-sentiment.bearish.high { background: rgba(74, 222, 128, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.4); }
-        .news-sentiment.bearish.medium { background: rgba(74, 222, 128, 0.15); color: #86efac; }
-        .news-sentiment.bearish.low { background: rgba(74, 222, 128, 0.1); color: #bbf7d0; }
-        .news-sentiment.neutral.high { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
-        .news-sentiment.neutral.medium { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
-        .news-sentiment.neutral.low { background: rgba(251, 191, 36, 0.1); color: #fde68a; }
+        /* 颜色：红=利多，黄=中性，绿=利空 */
+        .news-title-zh.bullish { color: #f87171; }
+        .news-title-zh.bearish { color: #4ade80; }
+        .news-title-zh.neutral { color: #fbbf24; }
+        
+        .news-sentiment { font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+        .news-sentiment.bullish { background: rgba(248, 113, 113, 0.2); color: #f87171; }
+        .news-sentiment.bearish { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+        .news-sentiment.neutral { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
         
         .api-status { font-size: 11px; color: #4ade80; margin-top: 8px; text-align: center; }
-        
         .loading { text-align: center; padding: 20px; color: #888; font-size: 14px; }
-        .loading.hidden { display: none; }
-        
         .news-count { text-align: center; font-size: 12px; color: #666; padding: 10px; }
     </style>
 </head>
@@ -89,7 +86,6 @@
                 <div class="loading" id="loading">加载中...</div>
             </div>
             <div class="news-count" id="newsCount">已加载 0 条新闻</div>
-            <div class="loading hidden" id="loadMore">加载更多...</div>
         </div>
     </div>
 
@@ -131,6 +127,57 @@
             document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('zh-CN');
         }
 
+        // 更准确的翻译函数
+        function translateTitle(title) {
+            // 常见金融术语翻译
+            const translations = {
+                'Gold price today': '今日黄金价格',
+                'gold prices': '黄金价格',
+                'Gold rises': '黄金上涨',
+                'Gold falls': '黄金下跌',
+                'Gold surges': '黄金价格飙升',
+                'Gold drops': '黄金价格下跌',
+                'gold market': '黄金市场',
+                'Gold futures': '黄金期货',
+                'gold ETF': '黄金ETF',
+                'Dollar': '美元',
+                'US Dollar': '美元',
+                'USD': '美元',
+                'Federal Reserve': '美联储',
+                'Fed': '美联储',
+                'interest rate': '利率',
+                'inflation': '通胀',
+                'tariff': '关税',
+                'trade': '贸易',
+                'China': '中国',
+                'market': '市场',
+                'rises': '上涨',
+                'falls': '下跌',
+                'surge': '飙升',
+                'drop': '下跌',
+                'hits': '触及',
+                'high': '高点',
+                'low': '低点',
+                'record': '纪录',
+                'analysis': '分析',
+                'forecast': '预测',
+                'outlook': '展望',
+                'investors': '投资者',
+                'traders': '交易员',
+                'safe-haven': '避险',
+                'bullion': '贵金属'
+            };
+            
+            let zh = title;
+            // 优先匹配长短语
+            const phrases = Object.keys(translations).sort((a, b) => b.length - a.length);
+            phrases.forEach(phrase => {
+                zh = zh.replace(new RegExp(phrase, 'gi'), translations[phrase]);
+            });
+            
+            return zh;
+        }
+
         async function loadNews() {
             document.getElementById('loading').classList.remove('hidden');
             
@@ -141,18 +188,19 @@
                 if (data.status === 'ok' && data.items) {
                     allNews = data.items.map((item, index) => {
                         const title = item.title || '';
+                        const analysis = analyzeSentiment(title);
                         return {
                             id: index,
                             title_en: title,
-                            title_zh: translateToChinese(title),
+                            title_zh: translateTitle(title),
                             time: new Date(item.pubDate).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
                             link: item.link,
-                            pubDate: new Date(item.pubDate).getTime()
+                            pubDate: new Date(item.pubDate).getTime(),
+                            sentiment: analysis.sentiment,
+                            impact: analysis.impact
                         };
                     });
-                    // 按时间倒序
                     allNews.sort((a, b) => b.pubDate - a.pubDate);
-                    
                     renderBatch();
                 }
             } catch (e) {
@@ -162,22 +210,18 @@
             document.getElementById('loading').classList.add('hidden');
         }
 
-        function translateToChinese(title) {
-            const map = { 'gold': '黄金', 'Gold': '黄金', 'price': '价格', 'today': '今日', 'rises': '上涨', 'falls': '下跌', 'market': '市场', 'dollar': '美元', '上涨': '上涨', '下跌': '下跌', '突破': '突破', '新高': '新高', '分析师': '分析师', '预期': '预期', '央行': '央行', '美联储': '美联储', '美元': '美元', '贵金属': '贵金属', '避险': '避险' };
-            let zh = title;
-            Object.keys(map).forEach(key => { zh = zh.replace(new RegExp(key, 'gi'), map[key]); });
-            return zh;
-        }
-
         function analyzeSentiment(text) {
-            const bullish = ['上涨', 'rise', 'Rises', 'surge', 'bullish', 'gain', 'high', '突破', '新高', '攀升', '走强', '攀升'];
-            const bearish = ['下跌', 'fall', 'Falls', 'drop', 'bearish', 'lose', 'low', '跌破', '新低', '下行', '走弱', '跳水'];
+            const bullish = ['rises', 'Rises', 'surge', 'surges', 'gains', 'gain', 'bullish', 'high', 'up', 'higher', 'soars', 'rally', 'rise', '上涨', '攀升', '飙升'];
+            const bearish = ['falls', 'Falls', 'drops', 'drop', 'bearish', 'low', 'down', 'lower', 'plunges', 'slump', 'decline', '下跌', '下行', '跳水'];
+            
             let bullishCount = 0, bearishCount = 0;
-            bullish.forEach(w => { if (text.toLowerCase().includes(w.toLowerCase())) bullishCount++ });
-            bearish.forEach(w => { if (text.toLowerCase().includes(w.toLowerCase())) bearishCount++ });
+            const lowerText = text.toLowerCase();
+            bullish.forEach(w => { if (lowerText.includes(w.toLowerCase())) bullishCount++ });
+            bearish.forEach(w => { if (lowerText.includes(w.toLowerCase())) bearishCount++ });
+            
             let sentiment = 'neutral', impact = 'low';
-            if (bullishCount > bearishCount) { sentiment = 'bullish'; impact = bullishCount >= 3 ? 'high' : (bullishCount >= 2 ? 'medium' : 'low'); }
-            else if (bearishCount > bullishCount) { sentiment = 'bearish'; impact = bearishCount >= 3 ? 'high' : (bearishCount >= 2 ? 'medium' : 'low'); }
+            if (bullishCount > bearishCount) { sentiment = 'bullish'; impact = bullishCount >= 2 ? 'high' : 'medium'; }
+            else if (bearishCount > bullishCount) { sentiment = 'bearish'; impact = bearishCount >= 2 ? 'high' : 'medium'; }
             return { sentiment, impact };
         }
 
@@ -190,16 +234,16 @@
             }
             
             batch.forEach(news => {
-                const analysis = analyzeSentiment(news.title_en);
-                const newsData = { title_en: news.title_en, title_zh: news.title_zh, time: news.time, link: news.link, ...analysis };
                 const html = `
-                    <div class="news-item" onclick="openDetail(${JSON.stringify(newsData).replace(/"/g, '&quot;').replace(/'/g, "\\'")})">
+                    <div class="news-item" onclick="openDetail('${encodeURIComponent(news.title_en)}', '${encodeURIComponent(news.title_zh)}', '${news.sentiment}', '${news.impact}', '${news.time}', '${encodeURIComponent(news.link)}')">
                         <div class="news-content">
-                            <div class="news-title-zh">${news.title_zh}</div>
-                            <div class="news-title-en">${news.title_en.substring(0, 80)}${news.title_en.length > 80 ? '...' : ''}</div>
-                            <div class="news-meta"><span>${news.time}</span><span>Google News</span></div>
+                            <div class="news-titles">
+                                <div class="news-title-zh ${news.sentiment}">${news.title_zh}</div>
+                                <div class="news-title-en">${news.title_en}</div>
+                                <div class="news-meta">${news.time} · Google News</div>
+                            </div>
+                            <div class="news-sentiment ${news.sentiment}">${getSentimentText(news.sentiment)}(${getImpactText(news.impact)})</div>
                         </div>
-                        <div class="news-sentiment ${analysis.sentiment} ${analysis.impact}">${getSentimentText(analysis.sentiment)}(${getImpactText(analysis.impact)})</div>
                     </div>
                 `;
                 container.insertAdjacentHTML('beforeend', html);
@@ -207,31 +251,22 @@
             
             displayedCount += batch.length;
             document.getElementById('newsCount').textContent = `已加载 ${displayedCount} 条新闻`;
-            
-            // 显示加载更多按钮
-            if (displayedCount < allNews.length) {
-                document.getElementById('loadMore').classList.remove('hidden');
-            } else {
-                document.getElementById('loadMore').classList.add('hidden');
-            }
         }
 
-        function openDetail(news) {
+        function openDetail(title_en, title_zh, sentiment, impact, time, link) {
             const params = new URLSearchParams();
-            params.set('title_en', news.title_en);
-            params.set('title_zh', news.title_zh);
-            params.set('sentiment', news.sentiment);
-            params.set('impact', news.impact);
-            params.set('time', news.time);
-            params.set('link', news.link);
+            params.set('title_en', title_en);
+            params.set('title_zh', title_zh);
+            params.set('sentiment', sentiment);
+            params.set('impact', impact);
+            params.set('time', time);
+            params.set('link', link);
             location.href = 'detail.html?' + params.toString();
         }
 
-        // 无限滚动监听
         window.onscroll = function() {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
                 if (displayedCount < allNews.length) {
-                    document.getElementById('loadMore').classList.remove('hidden');
                     setTimeout(renderBatch, 300);
                 }
             }
@@ -239,7 +274,6 @@
 
         loadPrices();
         loadNews();
-        
         setInterval(loadPrices, 600000);
         setInterval(loadNews, 600000);
     </script>
