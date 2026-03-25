@@ -265,7 +265,8 @@ function renderNews() {
     if (shownCount==0) c.innerHTML='';
     for (var i=0;i<batch.length;i++) {
         var n = batch[i];
-        var html = '<div class="news-item" onclick="goDetail(\''+encodeURIComponent(n.title)+'\',\''+encodeURIComponent(n.title_zh)+'\',\''+n.sentiment+'\',\''+n.impact+'\',\''+n.time+'\',\''+encodeURIComponent(n.link)+'\')">';
+        // 直接传递原始数据，在goDetail里编码
+        var html = '<div class="news-item" onclick="goDetail(\''+escapeJs(n.title)+'\',\''+escapeJs(n.title_zh)+'\',\''+n.sentiment+'\',\''+n.impact+'\',\''+escapeJs(n.time)+'\',\''+escapeJs(n.link)+'\')">';
         html += '<div class="news-content"><div class="news-titles">';
         html += '<div class="news-title-zh '+n.sentiment+'">'+n.title_zh+'</div>';
         html += '<div class="news-title-en">原文：'+n.title+'</div>';
@@ -275,6 +276,12 @@ function renderNews() {
     }
     shownCount += batch.length;
     document.getElementById('newsCount').textContent = '已加载 '+shownCount+' 条';
+}
+
+// 转义JS字符串中的特殊字符
+function escapeJs(str) {
+    if (!str) return '';
+    return str.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/\r/g,'\\r');
 }
 
 function goDetail(en,zh,s,imp,tm,link) {
