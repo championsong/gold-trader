@@ -29,7 +29,9 @@ body{font-family:'Noto Sans SC',sans-serif;background:#1a1a2e;color:#fff;min-hei
 .val.bearish{color:#4ade80}
 .val.neutral{color:#fbbf24}
 .ai-box{background:#1f1f3a;border-radius:8px;padding:16px;margin-top:12px;border-left:3px solid #ffd700}
-.ai-text{font-size:14px;color:#ddd;line-height:1.8}
+.ai-title{font-size:14px;font-weight:600;color:#ffd700;margin-bottom:6px}
+.ai-text{font-size:13px;color:#ddd;line-height:1.8;margin-bottom:12px}
+.ai-footer{font-size:14px;font-weight:600;margin-top:12px;padding-top:12px;border-top:1px solid #333}
 .disclaimer{font-size:12px;color:#666;text-align:center;padding:20px}
 .loading{text-align:center;padding:40px;color:#888}
 </style>
@@ -37,7 +39,7 @@ body{font-family:'Noto Sans SC',sans-serif;background:#1a1a2e;color:#fff;min-hei
 <body>
 <div class="container">
 <div class="back-btn" onclick="location.href='index.html'">← 返回</div>
-<div class="loading" id="loading">🤖 AI 分析中...</div>
+<div class="loading" id="loading">🤖 AI 智能分析中...</div>
 <div id="content" style="display:none">
 <div class="badge" id="badge">--</div>
 <div class="card">
@@ -47,10 +49,8 @@ body{font-family:'Noto Sans SC',sans-serif;background:#1a1a2e;color:#fff;min-hei
 </div>
 <div class="card">
 <div class="section-title">📈 AI 智能分析</div>
-<div class="info-row"><span class="info-label">对金价影响</span><span class="val" id="direction">--</span></div>
-<div class="info-row"><span class="info-label">影响程度</span><span class="val" id="level">--</span></div>
 <div class="ai-box">
-<div class="ai-text" id="aiText">--</div>
+<div id="aiContent"></div>
 </div>
 </div>
 <div class="disclaimer">⚠️ 仅供参考，投资需谨慎</div>
@@ -58,74 +58,143 @@ body{font-family:'Noto Sans SC',sans-serif;background:#1a1a2e;color:#fff;min-hei
 </div>
 
 <script>
-(function(){
-var params = location.search.substring(1);
-var en = decodeURIComponent(params.replace('title_en=','').split('&')[0]) || '';
-var zh = decodeURIComponent(params.replace('title_zh=','').split('&')[0]) || en;
-var tm = params.indexOf('time=') > -1 ? params.split('time=')[1].split('&')[0] : '';
-
-document.getElementById('titleZh').textContent = zh;
-document.getElementById('titleEn').textContent = en;
-document.getElementById('time').textContent = tm;
-
-function analyze(news) {
-var t = news.toLowerCase();
-var score = 0;
-var factors = [];
-
-if (t.indexOf('tariff') > -1 || t.indexOf('impose') > -1) { score += 3; factors.push('关税政策'); }
-if (t.indexOf('war') > -1 || t.indexOf('conflict') > -1 || t.indexOf('tension') > -1) { score += 3; factors.push('地缘冲突'); }
-if (t.indexOf('peace') > -1 || t.indexOf('deal') > -1 || t.indexOf('agreement') > -1 || t.indexOf('ceasefire') > -1) { score -= 3; factors.push('达成协议'); }
-if (t.indexOf('rate hike') > -1) { score += 1; }
-if (t.indexOf('rate cut') > -1) { score -= 1; }
-if (t.indexOf('inflation') > -1 || t.indexOf('cpi') > -1) { score += 2; factors.push('通胀数据'); }
-if (t.indexOf('recession') > -1) { score += 2; factors.push('衰退风险'); }
-
-var sentiment, direction, level, text;
-
-if (score > 1) {
-sentiment = 'bullish';
-direction = '利多';
-level = score > 3 ? '高' : '中';
-var factorStr = factors.length > 0 ? factors.join('、') : '市场因素';
-if (level === '高') {
-text = '该消息涉及' + factorStr + '等因素，预计短期推动金价上涨。关税政策加剧贸易紧张，地缘风险上升，资金流向避险资产，建议关注回调做多机会。';
-} else {
-text = '该消息对黄金构成支撑，主要受' + factorStr + '影响。市场避险情绪升温，预计短期金价偏多运行，可考虑逢低布局。';
-}
-} else if (score < -1) {
-sentiment = 'bearish';
-direction = '利空';
-level = score < -3 ? '高' : '中';
-var factorStr = factors.length > 0 ? factors.join('、') : '市场因素';
-if (level === '高') {
-text = '该消息涉及' + factorStr + '等因素，预计短期大幅压低金价。地缘局势缓和降低避险需求，建议减仓观望，控制风险。';
-} else {
-text = '该消息对黄金构成压力，主要受' + factorStr + '影响。市场避险情绪消退，预计短期金价承压下行。';
-}
-} else {
-sentiment = 'neutral';
-direction = '中性';
-level = '低';
-text = '该消息属于常规信息，对黄金价格无明显方向指引。投资者保持观望，等待更多明确信号。建议维持原有投资策略。';
+function getParam(name) {
+    var params = location.search.substring(1).split('&');
+    for (var i = 0; i < params.length; i++) {
+        var pair = params[i].split('=');
+        if (pair[0] === name) return decodeURIComponent(pair[1] || '');
+    }
+    return '';
 }
 
-return { sentiment: sentiment, direction: direction, level: level, text: text };
+var titleEn = getParam('title_en');
+var titleZh = getParam('title_zh') || titleEn;
+var newsTime = getParam('time') || '';
+
+document.getElementById('titleZh').textContent = titleZh;
+document.getElementById('titleEn').textContent = titleEn;
+document.getElementById('time').textContent = newsTime;
+
+// 分析函数 - 生成专业格式
+function analyze(newsEn) {
+    var t = newsEn.toLowerCase();
+    var score = 0;
+    var type = '利多';
+    var level = '中';
+    var fundamentals = [];
+    var technical = '';
+    var suggestion = '';
+    var risk = '';
+    var reason = '';
+    
+    // 检测因素
+    if (t.indexOf('tariff') > -1 || t.indexOf('impose') > -1) {
+        score += 3;
+        fundamentals.push('关税政策加码，贸易摩擦升级');
+    }
+    if (t.indexOf('trade war') > -1) {
+        score += 3;
+        fundamentals.push('贸易战担忧加剧');
+    }
+    if (t.indexOf('war') > -1 || t.indexOf('conflict') > -1) {
+        score += 3;
+        fundamentals.push('地缘冲突升温，避险需求上升');
+    }
+    if (t.indexOf('tension') > -1 || t.indexOf('crisis') > -1) {
+        score += 2;
+        fundamentals.push('地缘紧张局势持续');
+    }
+    if (t.indexOf('inflation') > -1 || t.indexOf('cpi') > -1) {
+        score += 2;
+        fundamentals.push('通胀预期上升');
+    }
+    if (t.indexOf('recession') > -1) {
+        score += 2;
+        fundamentals.push('经济衰退风险升温');
+    }
+    if (t.indexOf('sanction') > -1) {
+        score += 2;
+        fundamentals.push('制裁措施引发不确定性');
+    }
+    if (t.indexOf('peace') > -1 || t.indexOf('deal') > -1) {
+        score -= 3;
+        fundamentals.push('地缘局势缓和');
+    }
+    if (t.indexOf('ceasefire') > -1 || t.indexOf('truce') > -1) {
+        score -= 3;
+        fundamentals.push('停火协议达成');
+    }
+    if (t.indexOf('agreement') > -1) {
+        score -= 2;
+        fundamentals.push('达成重要协议');
+    }
+    if (t.indexOf('rate cut') > -1) {
+        score -= 1;
+        fundamentals.push('宽松预期升温');
+    }
+    if (t.indexOf('fed') > -1 || t.indexOf('federal reserve') > -1) {
+        if (score > 0) score += 0.5;
+        else score -= 0.5;
+    }
+    
+    // 确定方向和级别
+    if (score > 1) {
+        type = '利多';
+        level = score >= 5 ? '高' : score >= 3 ? '中' : '低';
+    } else if (score < -1) {
+        type = '利空';
+        level = score <= -5 ? '高' : score <= -3 ? '中' : '低';
+    } else {
+        type = '中性';
+        level = '低';
+    }
+    
+    // 生成专业分析
+    var fundamentalText = fundamentals.length > 0 ? fundamentals.slice(0, 2).join('；') + '。' : '该消息未包含明显的宏观驱动因素。';
+    
+    if (type === '利多') {
+        technical = level === '高' ? '技术面看涨信号增强，金价有望测试上方阻力位，短期偏多格局延续。' : '技术面支撑偏多，短线可关注回调做多机会。';
+        suggestion = level === '高' ? '建议逢低做多为主，止损设在关键技术支撑位下方，目标关注前期高点。' : '建议轻仓试多，注意保护利润，设置合理止损。';
+        risk = level === '高' ? '注意高位追多风险，消息已被市场部分消化，宜回调买入。' : '市场波动可能加大，建议控制仓位，谨慎操作。';
+        reason = '该消息表明市场存在积极因素，通常与美元走弱、通胀预期上升或地缘政治风险有关。';
+    } else if (type === '利空') {
+        technical = level === '高' ? '技术面看跌信号增强，金价可能测试下方支撑，短期偏弱格局。' : '技术面偏弱，短线可考虑高抛或观望。';
+        suggestion = level === '高' ? '建议减仓或止损，保护已有利润，等待企稳信号再入场。' : '建议观望为主，避免盲目追空，控制风险。';
+        risk = level === '高' ? '注意快速下跌后的空头回补风险，不宜低位追空。' : '市场情绪可能快速转变，建议设置止损保护。';
+        reason = '该消息表明市场存在消极因素，通常与美元走强、避险需求下降或经济数据疲软有关。';
+    } else {
+        fundamentalText = '该消息属于常规信息，未包含明显的宏观驱动因素。';
+        technical = '技术面无明显方向指引，金价维持震荡整理格局。';
+        suggestion = '建议保持观望，等待更明确的方向信号出现。';
+        risk = '市场可能维持震荡，操作难度较大，控制仓位为宜。';
+        reason = '该消息对市场影响中性，未改变现有趋势。';
+    }
+    
+    var sentiment = type === '利多' ? 'bullish' : type === '利空' ? 'bearish' : 'neutral';
+    
+    // 构建HTML
+    var html = '<div class="ai-title">1. 基本面支撑</div>';
+    html += '<div class="ai-text">' + reason + '</div>';
+    html += '<div class="ai-title">2. 技术面影响</div>';
+    html += '<div class="ai-text">' + technical + '</div>';
+    html += '<div class="ai-title">3. 操作建议</div>';
+    html += '<div class="ai-text">' + suggestion + '</div>';
+    html += '<div class="ai-title">4. 风险提示</div>';
+    html += '<div class="ai-text">' + risk + '</div>';
+    html += '<div class="ai-footer">📊 影响程度：' + type + '(' + level + ')</div>';
+    
+    return { sentiment: sentiment, html: html };
 }
 
-var result = analyze(en);
+var result = analyze(titleEn);
 
-document.getElementById('badge').textContent = result.direction + '(' + result.level + ')';
+document.getElementById('badge').textContent = result.sentiment === 'bullish' ? '利多' : result.sentiment === 'bearish' ? '利空' : '中性';
 document.getElementById('badge').className = 'badge ' + result.sentiment;
 document.getElementById('titleZh').className = 'title-zh ' + result.sentiment;
-document.getElementById('direction').textContent = result.direction;
-document.getElementById('direction').className = 'val ' + result.sentiment;
-document.getElementById('level').textContent = result.level;
-document.getElementById('aiText').textContent = result.text;
+document.getElementById('aiContent').innerHTML = result.html;
 
 document.getElementById('loading').style.display = 'none';
 document.getElementById('content').style.display = 'block';
-})();
 </script>
 </body>
 </html>
