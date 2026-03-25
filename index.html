@@ -7,16 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #1a1a2e;
-            color: #fff;
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-        }
+        body { font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif; background: #1a1a2e; color: #fff; min-height: 100vh; }
         .container { max-width: 600px; margin: 0 auto; padding: 16px; }
-
-        /* 价格区域 */
         .price-section { padding: 20px; background: linear-gradient(180deg, #16213e 0%, #1a1a2e 100%); border-radius: 16px; margin-bottom: 16px; }
         .price-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .price-title { font-size: 18px; font-weight: 600; color: #ffd700; }
@@ -32,8 +24,6 @@
         .card-change { font-size: 14px; font-weight: 600; padding: 2px 8px; border-radius: 4px; display: inline-block; }
         .card-change.up { color: #4ade80; background: rgba(74, 222, 128, 0.15); }
         .card-change.down { color: #f87171; background: rgba(248, 113, 113, 0.15); }
-
-        /* 快讯区域 */
         .news-section { padding: 20px; }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .section-title { font-size: 18px; font-weight: 600; color: #fff; }
@@ -45,8 +35,6 @@
         .news-title { font-size: 14px; color: #fff; line-height: 1.5; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .news-meta { display: flex; gap: 10px; font-size: 11px; color: #888; }
         .news-sentiment { font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
-
-        /* 利多=红色，利空=绿色 */
         .news-sentiment.bullish.high { background: rgba(248, 113, 113, 0.2); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.4); }
         .news-sentiment.bullish.medium { background: rgba(248, 113, 113, 0.15); color: #fca5a5; }
         .news-sentiment.bullish.low { background: rgba(248, 113, 113, 0.1); color: #fecaca; }
@@ -56,8 +44,6 @@
         .news-sentiment.neutral.high { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
         .news-sentiment.neutral.medium { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
         .news-sentiment.neutral.low { background: rgba(251, 191, 36, 0.1); color: #fde68a; }
-
-        /* 详情弹窗 */
         .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto; }
         .modal.active { display: block; }
         .modal-content { background: #1a1a2e; max-width: 600px; margin: 20px auto; padding: 20px; border-radius: 16px; }
@@ -65,17 +51,16 @@
         .close-btn { background: rgba(255,215,0,0.1); color: #ffd700; padding: 8px 16px; border-radius: 20px; font-size: 14px; cursor: pointer; }
         .modal-sentiment { display: inline-block; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 6px; margin-bottom: 16px; }
         .modal-title { font-size: 18px; font-weight: 600; line-height: 1.5; color: #fff; margin-bottom: 12px; }
+        .modal-desc { font-size: 14px; color: #ccc; line-height: 1.6; margin-bottom: 16px; }
         .modal-time { font-size: 12px; color: #888; margin-bottom: 20px; }
         .analysis-section { background: #252542; border-radius: 12px; padding: 16px; }
         .analysis-title { font-size: 16px; font-weight: 600; color: #ffd700; margin-bottom: 16px; }
         .analysis-content { font-size: 14px; line-height: 1.8; color: #ccc; white-space: pre-wrap; }
-
         .api-status { font-size: 11px; color: #4ade80; margin-top: 8px; text-align: center; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 价格区域 -->
         <div class="price-section">
             <div class="price-header">
                 <span class="price-title">实时行情</span>
@@ -93,10 +78,9 @@
                     <div class="card-change" id="silverChange">--</div>
                 </div>
             </div>
-            <div class="api-status" id="apiStatus">数据源: 东方财富 √</div>
+            <div class="api-status" id="apiStatus">数据源加载中...</div>
         </div>
 
-        <!-- 快讯区域 -->
         <div class="news-section">
             <div class="section-header">
                 <span class="section-title">📰 实时快讯</span>
@@ -108,7 +92,6 @@
         </div>
     </div>
 
-    <!-- 详情弹窗 -->
     <div class="modal" id="detailModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -117,141 +100,156 @@
             </div>
             <div class="modal-sentiment" id="modalSentiment"></div>
             <div class="modal-title" id="modalTitle"></div>
+            <div class="modal-desc" id="modalDesc"></div>
             <div class="modal-time" id="modalTime"></div>
             <div class="analysis-section">
-                <div class="analysis-title">📈 AI 分析逻辑</div>
+                <div class="analysis-title">📈 AI 分析：对金价影响</div>
                 <div class="analysis-content" id="modalAnalysis"></div>
             </div>
         </div>
     </div>
 
     <script>
+        const GOLD_API_KEY = 'goldapi-a3oklx19mn5imvsw-io';
         const impactMap = { 'high': '高', 'medium': '中', 'low': '低' };
-        let lastGoldPrice = null;
-        let lastSilverPrice = null;
+        let cachedNews = [];
 
         function getImpactText(impact) { return impactMap[impact] || '低'; }
         function getSentimentText(sentiment) { return { 'bullish': '利多', 'bearish': '利空', 'neutral': '中性' }[sentiment] || '中性'; }
 
-        // 东方财富贵金属数据
-        async function loadPrices() {
+        // 黄金价格 API
+        async function loadGoldPrice() {
             try {
-                const response = await fetch('https://hq.sin.cn/ws/hq/v1.php/sym/marketdata/XAUUSD,XAGUSD', {
-                    headers: { 'Accept': 'application/json' }
+                const response = await fetch('https://www.goldapi.io/api/XAU/USD', {
+                    headers: { 'x-access-token': GOLD_API_KEY, 'Content-Type': 'application/json' }
                 });
-                const data = await response.json();
-                
-                if (data.data && data.data.list) {
-                    const goldData = data.data.list.find(d => d.sym === 'XAUUSD');
-                    const silverData = data.data.list.find(d => d.sym === 'XAGUSD');
-                    
-                    if (goldData) {
-                        const price = parseFloat(goldData.last);
-                        const change = lastGoldPrice ? price - lastGoldPrice : 0;
-                        lastGoldPrice = price;
-                        document.getElementById('goldPrice').textContent = price.toFixed(2);
-                        document.getElementById('goldChange').textContent = (change >= 0 ? '↑ ' : '↓ ') + Math.abs(change).toFixed(2);
-                        document.getElementById('goldChange').className = 'card-change ' + (change >= 0 ? 'up' : 'down');
-                    }
-                    
-                    if (silverData) {
-                        const price = parseFloat(silverData.last);
-                        const change = lastSilverPrice ? price - lastSilverPrice : 0;
-                        lastSilverPrice = price;
-                        document.getElementById('silverPrice').textContent = price.toFixed(2);
-                        document.getElementById('silverChange').textContent = (change >= 0 ? '↑ ' : '↓ ') + Math.abs(change).toFixed(2);
-                        document.getElementById('silverChange').className = 'card-change ' + (change >= 0 ? 'up' : 'down');
-                    }
-                    
-                    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('zh-CN');
-                    document.getElementById('apiStatus').textContent = '数据源: 东方财富 √';
-                    return true;
-                }
-            } catch (e) {
-                console.log('价格API失败', e);
-            }
-            
-            // 备用模拟数据
-            const goldPrice = 3015.50 + (Math.random() - 0.5) * 10;
-            const silverPrice = 33.25 + (Math.random() - 0.5) * 0.5;
-            document.getElementById('goldPrice').textContent = goldPrice.toFixed(2);
-            document.getElementById('silverPrice').textContent = silverPrice.toFixed(2);
-            document.getElementById('apiStatus').textContent = '数据源: 模拟数据';
-            return false;
-        }
-
-        // 华尔街见闻快讯
-        async function loadNews() {
-            try {
-                // 尝试华尔街见闻API
-                const response = await fetch('https://api-api-wscn.apps.stockstar.com/market/kline/list?symbol=XAUUSD,XAGUSD&scale=1&ma=5', {
-                    headers: { 'Accept': 'application/json' }
-                });
-                
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.data && data.data.length > 0) {
-                        const news = data.data.slice(0, 15).map((item, i) => ({
-                            id: i,
-                            title: item[0] || '市场动态更新',
-                            time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-                            sentiment: 'neutral',
-                            impact: 'low',
-                            source: '华尔街见闻'
-                        }));
-                        renderNews(news);
-                        return;
+                    if (data.price) {
+                        return { price: data.price, change: data.chg || 0 };
                     }
+                }
+            } catch (e) { console.log('GoldAPI失败', e); }
+            return null;
+        }
+
+        // 白银价格 API
+        async function loadSilverPrice() {
+            try {
+                const response = await fetch('https://www.goldapi.io/api/XAG/USD', {
+                    headers: { 'x-access-token': GOLD_API_KEY, 'Content-Type': 'application/json' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.price) {
+                        return { price: data.price, change: data.chg || 0 };
+                    }
+                }
+            } catch (e) { console.log('Silver API失败', e); }
+            return null;
+        }
+
+        // 加载所有价格
+        async function loadPrices() {
+            const goldData = await loadGoldPrice();
+            const silverData = await loadSilverPrice();
+            
+            if (goldData) {
+                document.getElementById('goldPrice').textContent = goldData.price.toFixed(2);
+                document.getElementById('goldChange').textContent = (goldData.change >= 0 ? '↑ ' : '↓ ') + Math.abs(goldData.change).toFixed(2);
+                document.getElementById('goldChange').className = 'card-change ' + (goldData.change >= 0 ? 'up' : 'down');
+            }
+            
+            if (silverData) {
+                document.getElementById('silverPrice').textContent = silverData.price.toFixed(2);
+                document.getElementById('silverChange').textContent = (silverData.change >= 0 ? '↑ ' : '↓ ') + Math.abs(silverData.change).toFixed(2);
+                document.getElementById('silverChange').className = 'card-change ' + (silverData.change >= 0 ? 'up' : 'down');
+            }
+            
+            if (goldData || silverData) {
+                document.getElementById('apiStatus').textContent = '数据源: GoldAPI.io √';
+                document.getElementById('apiStatus').style.color = '#4ade80';
+            } else {
+                document.getElementById('apiStatus').textContent = '数据源: API异常';
+                document.getElementById('apiStatus').style.color = '#f87171';
+            }
+            
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('zh-CN');
+        }
+
+        // 实时快讯 - 尝试多个新闻源
+        async function loadNews() {
+            let newsData = [];
+            
+            // 方法1: 尝试华尔街见闻RSS
+            try {
+                const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://www.wallstreetcn.com/rss/feed');
+                const data = await response.json();
+                if (data.status === 'ok' && data.items) {
+                    newsData = data.items.slice(0, 15).map(item => ({
+                        id: item.guid || item.link,
+                        title: item.title,
+                        desc: item.description?.replace(/<[^>]+>/g, '').substring(0, 200) || '',
+                        time: new Date(item.pubDate).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+                        link: item.link,
+                        source: '华尔街见闻'
+                    }));
                 }
             } catch (e) {
                 console.log('华尔街见闻API失败', e);
             }
             
-            // 备用：使用新浪财经快讯
-            try {
-                const response = await fetch('https://hq.sin.cn/ws/hq/v1.php/sym/marketdata/XAUUSD,XAGUSD/news', {
-                    headers: { 'Accept': 'application/json' }
-                });
-                const data = await response.json();
-                
-                if (data.data && data.data.list && data.data.list.length > 0) {
-                    const news = data.data.list.slice(0, 15).map(item => ({
-                        id: item.id,
-                        title: item.title || item.content,
-                        time: item.time || item.datetime,
-                        sentiment: 'neutral',
-                        impact: 'low',
-                        source: '东方财富'
-                    }));
-                    renderNews(news);
-                    return;
+            // 方法2: 尝试新浪财经
+            if (newsData.length === 0) {
+                try {
+                    const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://finance.sina.com.cn/roll/rollnews.xml');
+                    const data = await response.json();
+                    if (data.status === 'ok' && data.items) {
+                        newsData = data.items.slice(0, 15).map(item => ({
+                            id: item.guid || item.link,
+                            title: item.title,
+                            desc: '',
+                            time: new Date(item.pubDate).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+                            link: item.link,
+                            source: '新浪财经'
+                        }));
+                    }
+                } catch (e) {
+                    console.log('新浪RSS失败', e);
                 }
-            } catch (e) {
-                console.log('备用快讯API失败', e);
             }
             
-            // 最后使用模拟快讯
-            renderNews(getMockNews());
-        }
-
-        function getMockNews() {
-            return [
-                { id: 1, title: '美联储褐皮书显示经济温和增长，美元指数小幅回落', time: '11:30', sentiment: 'bullish', impact: 'medium', source: '华尔街见闻' },
-                { id: 2, title: '伦敦金突破3020美元盎司，创一个月新高', time: '11:15', sentiment: 'bullish', impact: 'high', source: '华尔街见闻' },
-                { id: 3, title: '美国10年期国债收益率下降，避险情绪升温', time: '11:00', sentiment: 'bullish', impact: 'medium', source: '华尔街见闻' },
-                { id: 4, title: '欧洲央行行长拉加德讲话后，欧元承压', time: '10:45', sentiment: 'bearish', impact: 'low', source: '华尔街见闻' },
-                { id: 5, title: '中国央行维持利率不变，符合市场预期', time: '10:30', sentiment: 'neutral', impact: 'low', source: '华尔街见闻' },
-                { id: 6, title: '黄金ETF持仓量增加，多头氛围浓厚', time: '10:15', sentiment: 'bullish', impact: 'medium', source: '华尔街见闻' },
-                { id: 7, title: '原油价格下跌，影响贵金属走势', time: '10:00', sentiment: 'bearish', impact: 'medium', source: '华尔街见闻' },
-                { id: 8, title: '地缘政治风险持续，避险资金流入黄金', time: '09:45', sentiment: 'bullish', impact: 'high', source: '华尔街见闻' },
-                { id: 9, title: '日本央行维持宽松政策，日元走弱', time: '09:30', sentiment: 'neutral', impact: 'low', source: '华尔街见闻' },
-                { id: 10, title: '金银比创三个月新低，白银相对强势', time: '09:15', sentiment: 'bullish', impact: 'medium', source: '华尔街见闻' }
-            ];
+            // 方法3: 尝试BBC商业新闻
+            if (newsData.length === 0) {
+                try {
+                    const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/business/rss.xml');
+                    const data = await response.json();
+                    if (data.status === 'ok' && data.items) {
+                        newsData = data.items.slice(0, 15).map(item => ({
+                            id: item.guid || item.link,
+                            title: item.title,
+                            desc: item.description?.replace(/<[^>]+>/g, '').substring(0, 200) || '',
+                            time: new Date(item.pubDate).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+                            link: item.link,
+                            source: 'BBC Business'
+                        }));
+                    }
+                } catch (e) {
+                    console.log('BBC RSS失败', e);
+                }
+            }
+            
+            if (newsData.length > 0) {
+                cachedNews = newsData;
+                renderNews(newsData);
+            } else {
+                document.getElementById('newsList').innerHTML = '<div style="text-align:center;padding:20px;color:#888;">暂无快讯</div>';
+            }
         }
 
         function analyzeSentiment(text) {
-            const bullish = ['上涨', '利好', '突破', '创新高', '涨', '升', '多头', '看涨', '增持', '买入', '支撑', '升温', '增加', '增强', '回升', '反弹'];
-            const bearish = ['下跌', '利空', '跌破', '创新低', '跌', '降', '空头', '看跌', '减持', '卖出', '回落', '下降', '承压', '减少', '下行'];
+            const bullish = ['上涨', '利好', '突破', '创新高', '涨', '升', '多头', '看涨', '增持', '买入', '支撑', '升温', '增加', '增强', '反弹', '新高', '走强', '攀升'];
+            const bearish = ['下跌', '利空', '跌破', '创新低', '跌', '降', '空头', '看跌', '减持', '卖出', '回落', '下降', '承压', '下行', '新低', '走弱', '跳水'];
             
             let bullishCount = 0, bearishCount = 0;
             bullish.forEach(w => { if (text.includes(w)) bullishCount++ });
@@ -270,16 +268,10 @@
 
         function renderNews(newsList) {
             const container = document.getElementById('newsList');
-            if (!newsList || newsList.length === 0) {
-                container.innerHTML = '<div style="text-align:center;padding:20px;color:#888;">暂无快讯</div>';
-                return;
-            }
             container.innerHTML = newsList.map(news => {
                 const analysis = analyzeSentiment(news.title);
-                const finalSentiment = news.sentiment || analysis.sentiment;
-                const finalImpact = news.impact || analysis.impact;
                 return `
-                    <div class="news-item" onclick="openDetail(${JSON.stringify({...news, sentiment: finalSentiment, impact: finalImpact}).replace(/"/g, '&quot;')})">
+                    <div class="news-item" onclick="openDetail(${JSON.stringify({...news, ...analysis}).replace(/"/g, '&quot;')})">
                         <div class="news-content">
                             <div class="news-title">${news.title}</div>
                             <div class="news-meta">
@@ -287,51 +279,61 @@
                                 <span>${news.source}</span>
                             </div>
                         </div>
-                        <div class="news-sentiment ${finalSentiment} ${finalImpact}">
-                            ${getSentimentText(finalSentiment)}(${getImpactText(finalImpact)})
+                        <div class="news-sentiment ${analysis.sentiment} ${analysis.impact}">
+                            ${getSentimentText(analysis.sentiment)}(${getImpactText(analysis.impact)})
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        function generateAnalysis(sentiment, impact, time) {
+        function generateAnalysis(sentiment, impact, title, desc) {
             const impactText = getImpactText(impact);
+            
             let analysis = '';
             
             if (sentiment === 'bullish') {
-                analysis = `【利多因素分析】
+                analysis = `【对金价影响分析 - 利多】
 
-1. 基本面支撑：该消息表明市场存在积极因素，通常与美元走弱、通胀预期上升或地缘政治风险有关。
+该消息对黄金市场构成利好，原因分析：
 
-2. 技术面影响：短期内可能推动黄金/白银价格进一步上涨，突破关键阻力位。
+1. 市场情绪：${title.includes('美元') ? '美元走弱通常利好黄金' : '消息提振市场风险偏好，利好贵金属'}
 
-3. 操作建议：建议关注回调机会，可考虑逢低做多，但需设置止损位。
+2. 供需因素：${title.includes('ETF') ? 'ETF持仓增加表明机构投资者看多黄金' : '市场资金可能流入贵金属避险板块'}
 
-4. 风险提示：高影响力度消息已反映在当前价格，追高需谨慎。`;
+3. 技术面：短期内可能推动金价上涨，关注上方阻力位。
+
+4. 操作建议：可关注回调机会逢低布局，但需设置止损。
+
+⚠️ 风险提示：以上仅供参考，投资需谨慎。`;
             } else if (sentiment === 'bearish') {
-                analysis = `【利空因素分析】
+                analysis = `【对金价影响分析 - 利空】
 
-1. 基本面压力：该消息显示市场存在负面因素，可能与美元走强、央行紧缩政策或风险情绪改善有关。
+该消息对黄金市场构成利空，原因分析：
 
-2. 技术面影响：价格可能下探支撑位，若跌破关键位置可能开启新一轮下跌。
+1. 市场情绪：${title.includes('美元') ? '美元走强通常利空黄金' : '风险情绪改善可能削弱黄金避险需求'}
 
-3. 操作建议：建议观望为主，若有空单可继续持有，注意保护盈利。
+2. 资金流向：${title.includes('ETF') ? 'ETF持仓下降表明资金流出' : '投资者可能从贵金属转向风险资产'}
 
-4. 风险提示：注意止损设置，防范价格快速反弹风险。`;
+3. 技术面：价格可能下探支撑位。
+
+4. 操作建议：建议观望或关注反弹阻力位做空。
+
+⚠️ 风险提示：以上仅供参考，投资需谨慎。`;
             } else {
-                analysis = `【中性因素分析】
+                analysis = `【对金价影响分析 - 中性】
 
-1. 市场反应：该消息对市场影响有限，属于常规数据发布或事件。
+该消息对黄金市场影响有限，原因分析：
 
-2. 观望情绪：投资者保持谨慎，等待更多信号指引。
+1. 市场反应：消息已被市场充分消化，未产生明显波动。
 
-3. 操作建议：维持原有仓位，等待方向明确后再做调整。
+2. 观望情绪：投资者保持谨慎，等待更多信号。
 
-4. 后续关注：建议关注后续相关数据发布和市场反应。`;
+3. 后续关注：建议关注相关经济数据发布。
+
+⚠️ 风险提示：以上仅供参考，投资需谨慎。`;
             }
             
-            analysis += `\n\n📊 影响程度：${impactText}\n⏰ 发布时间：${time}\n\n⚠️ 免责声明：以上分析仅供参考，不构成投资建议。投资有风险，入市需谨慎。`;
             return analysis;
         }
 
@@ -339,8 +341,9 @@
             document.getElementById('modalSentiment').textContent = getSentimentText(news.sentiment) + '(' + getImpactText(news.impact) + ')';
             document.getElementById('modalSentiment').className = 'modal-sentiment news-sentiment ' + news.sentiment + ' ' + news.impact;
             document.getElementById('modalTitle').textContent = news.title;
-            document.getElementById('modalTime').textContent = news.time;
-            document.getElementById('modalAnalysis').textContent = generateAnalysis(news.sentiment, news.impact, news.time);
+            document.getElementById('modalDesc').textContent = news.desc || '暂无详细描述';
+            document.getElementById('modalTime').textContent = news.time + ' · ' + news.source;
+            document.getElementById('modalAnalysis').textContent = generateAnalysis(news.sentiment, news.impact, news.title, news.desc);
             document.getElementById('detailModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
@@ -354,8 +357,9 @@
         loadPrices();
         loadNews();
 
-        // 每30秒更新价格
-        setInterval(loadPrices, 30000);
+        // 每10分钟更新 (600000ms)
+        setInterval(loadPrices, 600000);
+        setInterval(loadNews, 600000);
     </script>
 </body>
 </html>
