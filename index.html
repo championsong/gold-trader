@@ -26,6 +26,11 @@
         .card-change.up { color: #4ade80; background: rgba(74, 222, 128, 0.15); }
         .card-change.down { color: #f87171; background: rgba(248, 113, 113, 0.15); }
         
+        .news-tabs { display: flex; gap: 8px; margin-bottom: 16px; background: #252542; border-radius: 12px; padding: 4px; }
+        .news-tab { flex: 1; padding: 10px; text-align: center; font-size: 13px; font-weight: 500; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .news-tab.active { background: #ffd700; color: #1a1a2e; }
+        .news-tab:not(.active) { color: #888; }
+        
         .news-section { padding: 20px; padding-bottom: 40px; }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; position: sticky; top: 180px; z-index: 99; background: #1a1a2e; padding: 12px 0; }
         .section-title { font-size: 18px; font-weight: 600; color: #fff; }
@@ -40,7 +45,6 @@
         .news-title-en { font-size: 12px; color: #888; line-height: 1.4; }
         .news-meta { font-size: 11px; color: #666; margin-top: 6px; }
         
-        /* 颜色：红=利多，黄=中性，绿=利空 */
         .news-title-zh.bullish { color: #f87171; }
         .news-title-zh.bearish { color: #4ade80; }
         .news-title-zh.neutral { color: #fbbf24; }
@@ -77,10 +81,15 @@
             <div class="api-status" id="apiStatus">数据源加载中...</div>
         </div>
 
+        <div class="news-tabs">
+            <div class="news-tab active" onclick="switchTab('gold')">💰 黄金快讯</div>
+            <div class="news-tab" onclick="switchTab('trump')">🇺🇸 川普动态</div>
+        </div>
+
         <div class="news-section">
             <div class="section-header">
                 <span class="section-title">📰 实时快讯</span>
-                <span class="section-tag">Google News</span>
+                <span class="section-tag" id="currentSource">Google News</span>
             </div>
             <div class="news-list" id="newsList">
                 <div class="loading" id="loading">加载中...</div>
@@ -92,8 +101,9 @@
     <script>
         const GOLD_API_KEY = 'goldapi-a3oklx19mn5imvsw-io';
         const impactMap = { 'high': '高', 'medium': '中', 'low': '低' };
-        let allNews = [];
+        let allNews = { gold: [], trump: [] };
         let displayedCount = 0;
+        let currentTab = 'gold';
         const BATCH_SIZE = 30;
         
         function getImpactText(impact) { return impactMap[impact] || '低'; }
@@ -127,81 +137,53 @@
             document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('zh-CN');
         }
 
-        // 更准确的翻译函数
         function translateTitle(title) {
-            // 常见金融术语翻译
             const translations = {
-                'Gold price today': '今日黄金价格',
-                'gold prices': '黄金价格',
-                'Gold rises': '黄金上涨',
-                'Gold falls': '黄金下跌',
-                'Gold surges': '黄金价格飙升',
-                'Gold drops': '黄金价格下跌',
-                'gold market': '黄金市场',
-                'Gold futures': '黄金期货',
-                'gold ETF': '黄金ETF',
-                'Dollar': '美元',
-                'US Dollar': '美元',
-                'USD': '美元',
-                'Federal Reserve': '美联储',
-                'Fed': '美联储',
-                'interest rate': '利率',
-                'inflation': '通胀',
-                'tariff': '关税',
-                'trade': '贸易',
-                'China': '中国',
-                'market': '市场',
-                'rises': '上涨',
-                'falls': '下跌',
-                'surge': '飙升',
-                'drop': '下跌',
-                'hits': '触及',
-                'high': '高点',
-                'low': '低点',
-                'record': '纪录',
-                'analysis': '分析',
-                'forecast': '预测',
-                'outlook': '展望',
-                'investors': '投资者',
-                'traders': '交易员',
-                'safe-haven': '避险',
-                'bullion': '贵金属'
+                'Gold price today': '今日黄金价格', 'gold prices': '黄金价格', 'Gold rises': '黄金上涨',
+                'Gold falls': '黄金下跌', 'Gold surges': '黄金价格飙升', 'Gold drops': '黄金价格下跌',
+                'gold market': '黄金市场', 'Gold futures': '黄金期货', 'Dollar': '美元', 'US Dollar': '美元',
+                'Federal Reserve': '美联储', 'Fed': '美联储', 'interest rate': '利率', 'inflation': '通胀',
+                'tariff': '关税', 'trade': '贸易', 'China': '中国', 'market': '市场', 'rises': '上涨',
+                'falls': '下跌', 'surge': '飙升', 'drop': '下跌', 'Trump': '特朗普', 'Trump says': '特朗普表示',
+                'tariff': '关税', 'tariffs': '关税', 'trade war': '贸易战', 'impose': '征收', 'announces': '宣布',
+                'White House': '白宫', 'President': '总统', 'executive order': '行政令'
             };
-            
             let zh = title;
-            // 优先匹配长短语
-            const phrases = Object.keys(translations).sort((a, b) => b.length - a.length);
-            phrases.forEach(phrase => {
+            Object.keys(translations).sort((a, b) => b.length - a.length).forEach(phrase => {
                 zh = zh.replace(new RegExp(phrase, 'gi'), translations[phrase]);
             });
-            
             return zh;
         }
 
-        async function loadNews() {
+        async function loadNews(source) {
             document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('currentSource').textContent = source === 'gold' ? '黄金快讯' : '川普动态';
+            
+            const rssUrl = source === 'gold' 
+                ? 'https://news.google.com/rss/search?q=gold%20price%20OR%20XAUUSD%20OR%20forex%20market&hl=en-US&gl=US&ceid=US:en'
+                : 'https://news.google.com/rss/search?q=Trump%20OR%20tariff%20OR%20trade%20war%20OR%20White%20House&hl=en-US&gl=US&ceid=US:en';
             
             try {
-                const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent('https://news.google.com/rss/search?q=gold%20price%20OR%20XAUUSD%20OR%20forex%20market&hl=en-US&gl=US&ceid=US:en'));
+                const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl));
                 const data = await response.json();
                 
                 if (data.status === 'ok' && data.items) {
-                    allNews = data.items.map((item, index) => {
+                    allNews[source] = data.items.map((item, index) => {
                         const title = item.title || '';
                         const analysis = analyzeSentiment(title);
                         return {
-                            id: index,
-                            title_en: title,
-                            title_zh: translateTitle(title),
+                            id: index, title_en: title, title_zh: translateTitle(title),
                             time: new Date(item.pubDate).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-                            link: item.link,
-                            pubDate: new Date(item.pubDate).getTime(),
-                            sentiment: analysis.sentiment,
-                            impact: analysis.impact
+                            link: item.link, pubDate: new Date(item.pubDate).getTime(),
+                            sentiment: analysis.sentiment, impact: analysis.impact
                         };
                     });
-                    allNews.sort((a, b) => b.pubDate - a.pubDate);
-                    renderBatch();
+                    allNews[source].sort((a, b) => b.pubDate - a.pubDate);
+                    
+                    if (source === currentTab) {
+                        displayedCount = 0;
+                        renderBatch();
+                    }
                 }
             } catch (e) {
                 console.log('News load failed', e);
@@ -210,15 +192,20 @@
             document.getElementById('loading').classList.add('hidden');
         }
 
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.news-tab').forEach(t => t.classList.toggle('active', t.textContent.toLowerCase().includes(tab)));
+            displayedCount = 0;
+            renderBatch();
+        }
+
         function analyzeSentiment(text) {
-            const bullish = ['rises', 'Rises', 'surge', 'surges', 'gains', 'gain', 'bullish', 'high', 'up', 'higher', 'soars', 'rally', 'rise', '上涨', '攀升', '飙升'];
-            const bearish = ['falls', 'Falls', 'drops', 'drop', 'bearish', 'low', 'down', 'lower', 'plunges', 'slump', 'decline', '下跌', '下行', '跳水'];
-            
+            const bullish = ['rises', 'Rises', 'surge', 'gains', 'bullish', 'high', 'up', 'soars', 'rally', '上涨', '攀升', '飙升'];
+            const bearish = ['falls', 'Falls', 'drops', 'drop', 'bearish', 'low', 'down', 'plunges', 'slump', '下跌', '下行', '跳水'];
             let bullishCount = 0, bearishCount = 0;
             const lowerText = text.toLowerCase();
             bullish.forEach(w => { if (lowerText.includes(w.toLowerCase())) bullishCount++ });
             bearish.forEach(w => { if (lowerText.includes(w.toLowerCase())) bearishCount++ });
-            
             let sentiment = 'neutral', impact = 'low';
             if (bullishCount > bearishCount) { sentiment = 'bullish'; impact = bullishCount >= 2 ? 'high' : 'medium'; }
             else if (bearishCount > bullishCount) { sentiment = 'bearish'; impact = bearishCount >= 2 ? 'high' : 'medium'; }
@@ -227,11 +214,9 @@
 
         function renderBatch() {
             const container = document.getElementById('newsList');
-            const batch = allNews.slice(displayedCount, displayedCount + BATCH_SIZE);
+            const batch = allNews[currentTab].slice(displayedCount, displayedCount + BATCH_SIZE);
             
-            if (displayedCount === 0) {
-                container.innerHTML = '';
-            }
+            if (displayedCount === 0) container.innerHTML = '';
             
             batch.forEach(news => {
                 const html = `
@@ -240,7 +225,7 @@
                             <div class="news-titles">
                                 <div class="news-title-zh ${news.sentiment}">${news.title_zh}</div>
                                 <div class="news-title-en">${news.title_en}</div>
-                                <div class="news-meta">${news.time} · Google News</div>
+                                <div class="news-meta">${news.time} · ${currentTab === 'gold' ? '黄金快讯' : '川普动态'}</div>
                             </div>
                             <div class="news-sentiment ${news.sentiment}">${getSentimentText(news.sentiment)}(${getImpactText(news.impact)})</div>
                         </div>
@@ -255,27 +240,22 @@
 
         function openDetail(title_en, title_zh, sentiment, impact, time, link) {
             const params = new URLSearchParams();
-            params.set('title_en', title_en);
-            params.set('title_zh', title_zh);
-            params.set('sentiment', sentiment);
-            params.set('impact', impact);
-            params.set('time', time);
-            params.set('link', link);
+            params.set('title_en', title_en); params.set('title_zh', title_zh);
+            params.set('sentiment', sentiment); params.set('impact', impact);
+            params.set('time', time); params.set('link', link);
             location.href = 'detail.html?' + params.toString();
         }
 
         window.onscroll = function() {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
-                if (displayedCount < allNews.length) {
-                    setTimeout(renderBatch, 300);
-                }
+                if (displayedCount < allNews[currentTab].length) setTimeout(renderBatch, 300);
             }
         };
 
         loadPrices();
-        loadNews();
+        loadNews('gold');
+        loadNews('trump');
         setInterval(loadPrices, 600000);
-        setInterval(loadNews, 600000);
     </script>
 </body>
 </html>
