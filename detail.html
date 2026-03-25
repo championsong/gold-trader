@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>快讯详情 - 炒金宝</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif; background: #1a1a2e; color: #fff; min-height: 100vh; }
+        .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+        
+        .back-btn { display: inline-flex; align-items: center; color: #ffd700; font-size: 14px; padding: 8px 16px; background: rgba(255, 215, 0, 0.1); border-radius: 20px; margin-bottom: 16px; cursor: pointer; }
+        
+        .sentiment-badge { display: inline-block; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 6px; margin-bottom: 20px; }
+        .sentiment-badge.bullish { background: rgba(248, 113, 113, 0.2); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.4); }
+        .sentiment-badge.bearish { background: rgba(74, 222, 128, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.4); }
+        .sentiment-badge.neutral { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
+
+        .news-card { background: #252542; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        
+        .title-zh { font-size: 20px; font-weight: 700; line-height: 1.6; margin-bottom: 12px; }
+        .title-zh.bullish { color: #f87171; }
+        .title-zh.bearish { color: #4ade80; }
+        .title-zh.neutral { color: #fbbf24; }
+        
+        .title-en { font-size: 15px; color: #ccc; line-height: 1.6; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #333; }
+        
+        .source-info { font-size: 12px; color: #666; display: flex; align-items: center; gap: 8px; }
+        .source-badge { background: #2d2d4a; padding: 4px 10px; border-radius: 4px; font-size: 11px; }
+        
+        .analysis-card { background: #252542; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .analysis-title { font-size: 16px; font-weight: 600; color: #ffd700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        
+        .analysis-section { margin-bottom: 20px; }
+        .analysis-label { font-size: 13px; color: #888; margin-bottom: 8px; font-weight: 500; }
+        .analysis-text { font-size: 14px; color: #ccc; line-height: 1.8; }
+        
+        .impact-section { background: #1f1f3a; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .impact-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #333; }
+        .impact-row:last-child { border-bottom: none; }
+        .impact-label { font-size: 13px; color: #888; }
+        .impact-value { font-size: 14px; font-weight: 600; }
+        .impact-value.bullish { color: #f87171; }
+        .impact-value.bearish { color: #4ade80; }
+        .impact-value.neutral { color: #fbbf24; }
+        .impact-value.high { color: #fbbf24; }
+        .impact-value.medium { color: #fcd34d; }
+        .impact-value.low { color: #fde68a; }
+
+        .disclaimer { font-size: 12px; color: #666; text-align: center; padding: 20px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="back-btn" onclick="location.href='index.html'">← 返回快讯列表</div>
+
+        <div class="sentiment-badge" id="sentimentBadge">利多(高)</div>
+
+        <div class="news-card">
+            <div class="title-zh" id="titleZh">加载中...</div>
+            <div class="title-en" id="titleEn">Loading...</div>
+            <div class="source-info">
+                <span class="source-badge" id="sourceBadge">Google News</span>
+                <span id="newsTime">--:--</span>
+            </div>
+        </div>
+
+        <div class="analysis-card">
+            <div class="analysis-title">📈 AI 分析</div>
+            
+            <div class="impact-section">
+                <div class="impact-row">
+                    <span class="impact-label">对金价影响</span>
+                    <span class="impact-value" id="impactDirection">--</span>
+                </div>
+                <div class="impact-row">
+                    <span class="impact-label">影响程度</span>
+                    <span class="impact-value" id="impactLevel">--</span>
+                </div>
+            </div>
+            
+            <div class="analysis-section">
+                <div class="analysis-label">📋 影响逻辑</div>
+                <div class="analysis-text" id="impactLogic">加载中...</div>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            ⚠️ 免责声明：以上分析仅供参考，不构成投资建议。投资有风险，入市需谨慎。
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const title_en = decodeURIComponent(urlParams.get('title_en') || '');
+        const title_zh = decodeURIComponent(urlParams.get('title_zh') || title_en);
+        const sentiment = urlParams.get('sentiment') || 'neutral';
+        const impact = urlParams.get('impact') || 'low';
+        const time = urlParams.get('time') || '';
+        const link = decodeURIComponent(urlParams.get('link') || '');
+
+        const impactMap = { 'high': '高', 'medium': '中', 'low': '低' };
+        const sentimentMap = { 'bullish': '利多', 'bearish': '利空', 'neutral': '中性' };
+        const impactText = impactMap[impact];
+        const sentimentText = sentimentMap[sentiment];
+
+        // 显示数据
+        document.getElementById('titleZh').textContent = title_zh;
+        document.getElementById('titleZh').className = 'title-zh ' + sentiment;
+        document.getElementById('titleEn').textContent = title_en;
+        document.getElementById('sentimentBadge').textContent = sentimentText + '(' + impactText + ')';
+        document.getElementById('sentimentBadge').className = 'sentiment-badge ' + sentiment;
+        document.getElementById('newsTime').textContent = time;
+
+        // 影响方向和程度
+        document.getElementById('impactDirection').textContent = sentimentText;
+        document.getElementById('impactDirection').className = 'impact-value ' + sentiment;
+        document.getElementById('impactLevel').textContent = impactText;
+        document.getElementById('impactLevel').className = 'impact-value ' + impact;
+
+        // AI分析逻辑
+        function generateImpactLogic() {
+            const lowerTitle = title_en.toLowerCase();
+            let analysis = '';
+            
+            if (sentiment === 'bullish') {
+                analysis = `1. 关键词识别：`;
+                if (lowerTitle.includes('rise') || lowerTitle.includes('surge') || lowerTitle.includes('gain')) analysis += '标题显示价格上涨或市场上涨信号，';
+                if (lowerTitle.includes('dollar') || lowerTitle.includes('usd')) analysis += '美元走势影响黄金定价，';
+                if (lowerTitle.includes('fed') || lowerTitle.includes('rate')) analysis += '货币政策预期影响黄金避险需求，';
+                analysis += '\n\n2. 传导机制：该消息通常利好黄金，因为可能引发美元走弱、通胀预期上升或避险需求增加。';
+                analysis += '\n\n3. 市场反应：短期内可能推动金价上涨，关注上方阻力位突破情况。';
+                analysis += '\n\n4. 操作建议：可关注回调机会逢低布局，设置止损位控制风险。';
+            } else if (sentiment === 'bearish') {
+                analysis = `1. 关键词识别：`;
+                if (lowerTitle.includes('fall') || lowerTitle.includes('drop') || lowerTitle.includes('decline')) analysis += '标题显示价格下跌或市场承压信号，';
+                if (lowerTitle.includes('dollar') || lowerTitle.includes('usd')) analysis += '美元走强通常压制黄金，';
+                if (lowerTitle.includes('risk') || lowerTitle.includes('rally')) analysis += '风险情绪改善可能导致资金流出贵金属，';
+                analysis += '\n\n2. 传导机制：该消息利空黄金，因为可能预示美元走强、风险偏好改善或实物需求下降。';
+                analysis += '\n\n3. 市场反应：价格可能下探支撑位，若跌破关键位置可能开启新一轮下跌。';
+                analysis += '\n\n4. 操作建议：建议观望为主，注意保护现有仓位，设置合理止损。';
+            } else {
+                analysis = `1. 关键词识别：标题未包含明显的涨跌关键词，属于中性消息。`;
+                analysis += '\n\n2. 传导机制：该消息对市场影响有限，可能已被充分消化或属于常规信息发布。';
+                analysis += '\n\n3. 市场反应：投资者保持谨慎观望，等待更多明确信号。';
+                analysis += '\n\n4. 操作建议：维持原有投资策略，关注后续数据发布和市场反应。';
+            }
+            
+            return analysis;
+        }
+
+        document.getElementById('impactLogic').textContent = generateImpactLogic();
+
+        // 如果有原文链接
+        if (link) {
+            document.getElementById('sourceBadge').style.cursor = 'pointer';
+            document.getElementById('sourceBadge').onclick = function() {
+                window.open(link, '_blank');
+            };
+        }
+    </script>
+</body>
+</html>
