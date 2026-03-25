@@ -221,7 +221,8 @@ function renderNews() {
 }
 
 function goDetail(en,zh,s,imp,tm,link) {
-    location.href = 'detail.html?title_en='+en+'&title_zh='+zh+'&sentiment='+s+'&impact='+imp+'&time='+tm+'&link='+link;
+    var url = 'detail.html?title_en='+encodeURIComponent(en)+'&title_zh='+encodeURIComponent(zh)+'&sentiment='+s+'&impact='+imp+'&time='+encodeURIComponent(tm)+'&link='+encodeURIComponent(link);
+    location.href = url;
 }
 
 window.onscroll = function() {
