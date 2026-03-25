@@ -28,13 +28,9 @@
         
         .source-info { font-size: 12px; color: #666; display: flex; align-items: center; gap: 8px; }
         .source-badge { background: #2d2d4a; padding: 4px 10px; border-radius: 4px; font-size: 11px; }
-        
+
         .analysis-card { background: #252542; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-        .analysis-title { font-size: 16px; font-weight: 600; color: #ffd700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-        
-        .analysis-section { margin-bottom: 20px; }
-        .analysis-label { font-size: 13px; color: #888; margin-bottom: 8px; font-weight: 500; }
-        .analysis-text { font-size: 14px; color: #ccc; line-height: 1.8; }
+        .analysis-title { font-size: 16px; font-weight: 600; color: #ffd700; margin-bottom: 20px; }
         
         .impact-section { background: #1f1f3a; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
         .impact-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #333; }
@@ -44,50 +40,60 @@
         .impact-value.bullish { color: #f87171; }
         .impact-value.bearish { color: #4ade80; }
         .impact-value.neutral { color: #fbbf24; }
-        .impact-value.high { color: #fbbf24; }
-        .impact-value.medium { color: #fcd34d; }
-        .impact-value.low { color: #fde68a; }
+        .impact-value.high { color: #f87171; font-size: 16px; }
+        .impact-value.medium { color: #fbbf24; }
+        .impact-value.low { color: #4ade80; }
+
+        .logic-section { margin-bottom: 16px; }
+        .logic-label { font-size: 13px; color: #888; margin-bottom: 8px; font-weight: 500; }
+        .logic-text { font-size: 14px; color: #ccc; line-height: 1.8; white-space: pre-wrap; }
 
         .disclaimer { font-size: 12px; color: #666; text-align: center; padding: 20px; line-height: 1.6; }
+        
+        .loading { text-align: center; padding: 40px; color: #888; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="back-btn" onclick="location.href='index.html'">← 返回快讯列表</div>
 
-        <div class="sentiment-badge" id="sentimentBadge">利多(高)</div>
+        <div class="loading" id="loading">🤖 AI 分析中...</div>
+        
+        <div id="content" style="display:none;">
+            <div class="sentiment-badge" id="sentimentBadge">利多(高)</div>
 
-        <div class="news-card">
-            <div class="title-zh" id="titleZh">加载中...</div>
-            <div class="title-en" id="titleEn">Loading...</div>
-            <div class="source-info">
-                <span class="source-badge" id="sourceBadge">Google News</span>
-                <span id="newsTime">--:--</span>
-            </div>
-        </div>
-
-        <div class="analysis-card">
-            <div class="analysis-title">📈 AI 分析</div>
-            
-            <div class="impact-section">
-                <div class="impact-row">
-                    <span class="impact-label">对金价影响</span>
-                    <span class="impact-value" id="impactDirection">--</span>
-                </div>
-                <div class="impact-row">
-                    <span class="impact-label">影响程度</span>
-                    <span class="impact-value" id="impactLevel">--</span>
+            <div class="news-card">
+                <div class="title-zh" id="titleZh">--</div>
+                <div class="title-en" id="titleEn">--</div>
+                <div class="source-info">
+                    <span class="source-badge">Google News</span>
+                    <span id="newsTime">--:--</span>
                 </div>
             </div>
-            
-            <div class="analysis-section">
-                <div class="analysis-label">📋 影响逻辑</div>
-                <div class="analysis-text" id="impactLogic">加载中...</div>
-            </div>
-        </div>
 
-        <div class="disclaimer">
-            ⚠️ 免责声明：以上分析仅供参考，不构成投资建议。投资有风险，入市需谨慎。
+            <div class="analysis-card">
+                <div class="analysis-title">📈 AI 分析</div>
+                
+                <div class="impact-section">
+                    <div class="impact-row">
+                        <span class="impact-label">对金价影响</span>
+                        <span class="impact-value" id="impactDirection">--</span>
+                    </div>
+                    <div class="impact-row">
+                        <span class="impact-label">影响程度</span>
+                        <span class="impact-value" id="impactLevel">--</span>
+                    </div>
+                </div>
+                
+                <div class="logic-section">
+                    <div class="logic-label">📋 影响逻辑分析</div>
+                    <div class="logic-text" id="impactLogic">--</div>
+                </div>
+            </div>
+
+            <div class="disclaimer">
+                ⚠️ 免责声明：以上分析仅供参考，不构成投资建议。投资有风险，入市需谨慎。
+            </div>
         </div>
     </div>
 
@@ -95,70 +101,155 @@
         const urlParams = new URLSearchParams(window.location.search);
         const title_en = decodeURIComponent(urlParams.get('title_en') || '');
         const title_zh = decodeURIComponent(urlParams.get('title_zh') || title_en);
-        const sentiment = urlParams.get('sentiment') || 'neutral';
-        const impact = urlParams.get('impact') || 'low';
         const time = urlParams.get('time') || '';
-        const link = decodeURIComponent(urlParams.get('link') || '');
 
-        const impactMap = { 'high': '高', 'medium': '中', 'low': '低' };
-        const sentimentMap = { 'bullish': '利多', 'bearish': '利空', 'neutral': '中性' };
-        const impactText = impactMap[impact];
-        const sentimentText = sentimentMap[sentiment];
-
-        // 显示数据
+        // 显示基本数据
         document.getElementById('titleZh').textContent = title_zh;
-        document.getElementById('titleZh').className = 'title-zh ' + sentiment;
         document.getElementById('titleEn').textContent = title_en;
-        document.getElementById('sentimentBadge').textContent = sentimentText + '(' + impactText + ')';
-        document.getElementById('sentimentBadge').className = 'sentiment-badge ' + sentiment;
         document.getElementById('newsTime').textContent = time;
 
-        // 影响方向和程度
-        document.getElementById('impactDirection').textContent = sentimentText;
-        document.getElementById('impactDirection').className = 'impact-value ' + sentiment;
-        document.getElementById('impactLevel').textContent = impactText;
-        document.getElementById('impactLevel').className = 'impact-value ' + impact;
-
-        // AI分析逻辑
-        function generateImpactLogic() {
-            const lowerTitle = title_en.toLowerCase();
+        // AI分析函数 - 基于完整新闻内容分析
+        function analyzeNews() {
+            const lower = title_en.toLowerCase();
+            let sentiment = 'neutral';
+            let impact = 'low';
             let analysis = '';
             
-            if (sentiment === 'bullish') {
-                analysis = `1. 关键词识别：`;
-                if (lowerTitle.includes('rise') || lowerTitle.includes('surge') || lowerTitle.includes('gain')) analysis += '标题显示价格上涨或市场上涨信号，';
-                if (lowerTitle.includes('dollar') || lowerTitle.includes('usd')) analysis += '美元走势影响黄金定价，';
-                if (lowerTitle.includes('fed') || lowerTitle.includes('rate')) analysis += '货币政策预期影响黄金避险需求，';
-                analysis += '\n\n2. 传导机制：该消息通常利好黄金，因为可能引发美元走弱、通胀预期上升或避险需求增加。';
-                analysis += '\n\n3. 市场反应：短期内可能推动金价上涨，关注上方阻力位突破情况。';
-                analysis += '\n\n4. 操作建议：可关注回调机会逢低布局，设置止损位控制风险。';
-            } else if (sentiment === 'bearish') {
-                analysis = `1. 关键词识别：`;
-                if (lowerTitle.includes('fall') || lowerTitle.includes('drop') || lowerTitle.includes('decline')) analysis += '标题显示价格下跌或市场承压信号，';
-                if (lowerTitle.includes('dollar') || lowerTitle.includes('usd')) analysis += '美元走强通常压制黄金，';
-                if (lowerTitle.includes('risk') || lowerTitle.includes('rally')) analysis += '风险情绪改善可能导致资金流出贵金属，';
-                analysis += '\n\n2. 传导机制：该消息利空黄金，因为可能预示美元走强、风险偏好改善或实物需求下降。';
-                analysis += '\n\n3. 市场反应：价格可能下探支撑位，若跌破关键位置可能开启新一轮下跌。';
-                analysis += '\n\n4. 操作建议：建议观望为主，注意保护现有仓位，设置合理止损。';
+            // 关键词权重分析
+            let bullishScore = 0;
+            let bearishScore = 0;
+            
+            // 利多关键词（对黄金有利）
+            const bullishKeywords = [
+                { keyword: 'tariff', weight: 3, reason: '关税战通常导致贸易紧张，利好黄金避险需求' },
+                { keyword: 'impose tariff', weight: 3, reason: '加征关税引发贸易摩擦，市场避险情绪升温' },
+                { keyword: 'trade war', weight: 3, reason: '贸易战升级增加经济不确定性，利好黄金' },
+                { keyword: 'war', weight: 3, reason: '战争/冲突导致地缘风险上升，利好黄金' },
+                { keyword: 'conflict', weight: 2, reason: '冲突加剧影响市场稳定，利好黄金' },
+                { keyword: 'tension', weight: 2, reason: '地区紧张局势提升避险需求' },
+                { keyword: 'crisis', weight: 2, reason: '危机事件增加市场风险规避' },
+                { keyword: 'sanction', weight: 2, reason: '制裁引发经济不确定性' },
+                { keyword: 'trump', weight: 1, reason: '特朗普政策增加政策不确定性' },
+                { keyword: 'inflation', weight: 2, reason: '通胀上升提升黄金抗通胀需求' },
+                { keyword: 'recession', weight: 2, reason: '经济衰退预期利好黄金' },
+                { keyword: 'uncertainty', weight: 2, reason: '不确定性增加利好黄金' }
+            ];
+            
+            // 利空关键词（对黄金不利）
+            const bearishKeywords = [
+                { keyword: 'deal', weight: 2, reason: '达成协议可能缓解地缘紧张' },
+                { keyword: 'peace', weight: 3, reason: '和平协议降低避险需求' },
+                { keyword: 'agreement', weight: 2, reason: '协议达成改善市场情绪' },
+                { keyword: 'ceasefire', weight: 3, reason: '停火协议降低地缘风险' },
+                { keyword: 'rate cut', weight: 2, reason: '降息可能影响黄金吸引力' },
+                { keyword: 'easing', weight: 1, reason: '政策放松可能减少避险需求' },
+                { keyword: 'rally', weight: 1, reason: '市场反弹可能减少避险配置' },
+                { keyword: 'solution', weight: 1, reason: '问题解决降低不确定性' },
+                { keyword: 'progress', weight: 1, reason: '进展积极降低避险情绪' }
+            ];
+            
+            // 计算得分
+            bullishKeywords.forEach(item => {
+                if (lower.includes(item.keyword)) {
+                    bullishScore += item.weight;
+                }
+            });
+            
+            bearishKeywords.forEach(item => {
+                if (lower.includes(item.keyword)) {
+                    bearishScore += item.weight;
+                }
+            });
+            
+            // 确定情感和影响程度
+            if (bullishScore > bearishScore) {
+                sentiment = 'bullish';
+                impact = bullishScore >= 5 ? 'high' : (bullishScore >= 3 ? 'medium' : 'low');
+            } else if (bearishScore > bullishScore) {
+                sentiment = 'bearish';
+                impact = bearishScore >= 5 ? 'high' : (bearishScore >= 3 ? 'medium' : 'low');
             } else {
-                analysis = `1. 关键词识别：标题未包含明显的涨跌关键词，属于中性消息。`;
-                analysis += '\n\n2. 传导机制：该消息对市场影响有限，可能已被充分消化或属于常规信息发布。';
-                analysis += '\n\n3. 市场反应：投资者保持谨慎观望，等待更多明确信号。';
-                analysis += '\n\n4. 操作建议：维持原有投资策略，关注后续数据发布和市场反应。';
+                sentiment = 'neutral';
+                impact = 'low';
             }
             
-            return analysis;
+            // 生成详细分析
+            if (sentiment === 'bullish') {
+                analysis = `【AI分析结果 - 利多黄金】\n\n`;
+                analysis += `📰 新闻原文：${title_en}\n\n📰 中文标题：${title_zh}\n\n`;
+                analysis += `【影响逻辑】\n\n`;
+                
+                // 列出匹配的关键词及原因
+                bullishKeywords.forEach(item => {
+                    if (lower.includes(item.keyword)) {
+                        analysis += `✓ 检测到关键词"${item.keyword}" → ${item.reason}\n`;
+                    }
+                });
+                
+                analysis += `\n【综合判断】\n`;
+                if (impact === 'high') {
+                    analysis += `该新闻对黄金市场产生强利多影响。建议关注回调机会，逢低布局。`;
+                } else if (impact === 'medium') {
+                    analysis += `该新闻对黄金市场产生中等利多影响。短期可能推动金价上涨。`;
+                } else {
+                    analysis += `该新闻对黄金市场产生轻微利多影响。`;
+                }
+                
+            } else if (sentiment === 'bearish') {
+                analysis = `【AI分析结果 - 利空黄金】\n\n`;
+                analysis += `📰 新闻原文：${title_en}\n\n📰 中文标题：${title_zh}\n\n`;
+                analysis += `【影响逻辑】\n\n`;
+                
+                bearishKeywords.forEach(item => {
+                    if (lower.includes(item.keyword)) {
+                        analysis += `✓ 检测到关键词"${item.keyword}" → ${item.reason}\n`;
+                    }
+                });
+                
+                analysis += `\n【综合判断】\n`;
+                if (impact === 'high') {
+                    analysis += `该新闻对黄金市场产生强利空影响。建议观望为主，注意保护仓位。`;
+                } else if (impact === 'medium') {
+                    analysis += `该新闻对黄金市场产生中等利空影响。短期可能压制金价。`;
+                } else {
+                    analysis += `该新闻对黄金市场产生轻微利空影响。`;
+                }
+                
+            } else {
+                analysis = `【AI分析结果 - 中性】\n\n`;
+                analysis += `📰 新闻原文：${title_en}\n\n📰 中文标题：${title_zh}\n\n`;
+                analysis += `【分析说明】\n\n该新闻未包含明显的利多或利空关键词，属于中性消息。\n`;
+                analysis += `市场对此类消息反应平淡，投资者保持观望。\n`;
+                analysis += `建议维持原有投资策略，等待更明确的信号。`;
+            }
+            
+            return { sentiment, impact, analysis };
         }
 
-        document.getElementById('impactLogic').textContent = generateImpactLogic();
-
-        // 如果有原文链接
-        if (link) {
-            document.getElementById('sourceBadge').style.cursor = 'pointer';
-            document.getElementById('sourceBadge').onclick = function() {
-                window.open(link, '_blank');
-            };
-        }
+        // 执行分析
+        const result = analyzeNews();
+        
+        // 更新界面
+        const sentimentText = result.sentiment === 'bullish' ? '利多' : result.sentiment === 'bearish' ? '利空' : '中性';
+        const impactText = result.impact === 'high' ? '高' : result.impact === 'medium' ? '中' : '低';
+        const sentimentColor = result.sentiment;
+        
+        document.getElementById('sentimentBadge').textContent = sentimentText + '(' + impactText + ')';
+        document.getElementById('sentimentBadge').className = 'sentiment-badge ' + sentimentColor;
+        
+        document.getElementById('titleZh').className = 'title-zh ' + sentimentColor;
+        
+        document.getElementById('impactDirection').textContent = sentimentText;
+        document.getElementById('impactDirection').className = 'impact-value ' + sentimentColor;
+        
+        document.getElementById('impactLevel').textContent = impactText;
+        document.getElementById('impactLevel').className = 'impact-value ' + result.impact;
+        
+        document.getElementById('impactLogic').textContent = result.analysis;
+        
+        // 显示内容
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
     </script>
 </body>
 </html>
